@@ -56,5 +56,18 @@ int setupServer(int port) {
 
 int main() {
     int serverFileDescriptor = setupServer(6379);
+
+    struct sockaddr_in client_address;
+    socklen_t client_address_len = sizeof(client_address);
+
+    while (true) {
+        int client_fd = accept(serverFileDescriptor, (struct sockaddr *)&client_address, &client_address_len);
+        if (client_fd < 0) {
+            std::cerr << "Failed to accept the connection" << "\n";
+            continue;
+        }
+        std::cout << "New Client Connected" << "\n";
+        close(client_fd);
+    }
     return 0;
 }
