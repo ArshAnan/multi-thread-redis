@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20)
 project(multiThreadRedis VERSION 1.0.0 LANGUAGES CXX)
 
 # add_executable() creates an executable target named "multiThreadRedis" that builds the "src/main.cpp" file.
-add_executable(multiThreadRedis src/main.cpp)
+add_executable(multiThreadRedis src/main.cpp src/resp.cpp)
 
 # set_target_properties() sets the properties of the target.
 set_target_properties(multiThreadRedis PROPERTIES

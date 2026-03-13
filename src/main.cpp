@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "resp.h"
 // Making sure the port is listening to the client
 int setupServer(int port) {
     // Create a socket
@@ -58,7 +59,6 @@ void handleClient(int client_fd) {
     char buffer[4096];
     while (true) {
         ssize_t bytes_read = read(client_fd, buffer, sizeof(buffer) - 1); // Read the command from the client. The -1 is to leave space for the null terminator.
-        buffer[bytes_read] = '\0'; // Add the null terminator to the end of the buffer.
         if (bytes_read < 0) {
             std::cerr << "Failed to read from the client" << "\n"; // If the reading fails, exit the program.
             break; // If the reading fails, break out of the loop.
@@ -67,7 +67,15 @@ void handleClient(int client_fd) {
             std::cout << "Client disconnected" << "\n"; // If the client disconnects, print a message to the console.
             break; // If the client disconnects, break out of the loop.
         }
-        std::cout << "Received command: " << buffer << "\n"; // Print the command to the console.
+        buffer[bytes_read] = '\0'; // Add the null terminator to the end of the buffer.
+        std::string commandString(buffer);
+        std::optional<Command> command = parseCommand(commandString);
+        if (command) {
+            std::cout << "Received command: " << command->name << "\n";
+        }
+        else {
+            std::cout << "Invalid command" << "\n";
+        }
     }
     close(client_fd); // Close the client socket.
     return; // Return from the function.
