@@ -3,8 +3,18 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
 #include "resp.h"
+
+#include <unordered_map>
+#include <functional>
+
+std::unordered_map<std::string, std::string> store;
+
+std::string handlePing(const std::vector<std::string>& args) {
+    return "+PONG\r\n";
+}
+
+std::unordered_map<std::string, std::function<std::string(const std::vector<std::string>&)>> dispatch;
 // Making sure the port is listening to the client
 int setupServer(int port) {
     // Create a socket
@@ -70,18 +80,30 @@ void handleClient(int client_fd) {
         buffer[bytes_read] = '\0'; // Add the null terminator to the end of the buffer.
         std::string commandString(buffer);
         std::optional<Command> command = parseCommand(commandString);
-        if (command) {
-            std::cout << "Received command: " << command->name << "\n";
+
+        if (!command) {
+            std::string error = "-ERR invalid command\r\n";
+            write(client_fd, error.c_str(), error.size());
+            continue;
+        }
+        
+        auto it = dispatch.find(command.value().name);
+        if (it != dispatch.end()) {
+            std::string response = it->second(command.value().args);
+            write(client_fd, response.c_str(), response.size());
         }
         else {
-            std::cout << "Invalid command" << "\n";
+            std::string response = "-ERR unknown command '" + command.value().name + "'\r\n";
+            write(client_fd, response.c_str(), response.size());
         }
     }
-    close(client_fd); // Close the client socket.
-    return; // Return from the function.
+    close(client_fd);
+    return;
 }
 
 int main() {
+    dispatch["PING"] = handlePing;
+
     int serverFileDescriptor = setupServer(6379);
 
     struct sockaddr_in client_address;
